@@ -85,9 +85,14 @@ public class MainApp extends Application {
         ComboBox<RequestState> state = new ComboBox<>(FXCollections.observableArrayList(RequestState.values()));
         Button add = new Button("Створити"), update = new Button("Перерахувати"), change = new Button("Змінити стан"),
                delete = new Button("Видалити"), refresh = new Button("Оновити");
-        add.setOnAction(e -> safe(() -> { api.addRequest(Long.parseLong(inspectionId.getText()), Long.parseLong(specialistId.getText())); refreshRequests(); }));
-        update.setOnAction(e -> safe(() -> { api.updateRequest(selected(requests).getId(), Long.parseLong(inspectionId.getText()), Long.parseLong(specialistId.getText())); refreshRequests(); }));
-        change.setOnAction(e -> safe(() -> { api.changeRequestState(selected(requests).getId(), state.getValue()); refreshRequests(); }));
+        add.setOnAction(e -> safe(() -> { api.addRequest(wholeNumber(inspectionId, "ID огляду"), wholeNumber(specialistId, "ID фахівця")); refreshRequests(); }));
+        update.setOnAction(e -> safe(() -> { api.updateRequest(selected(requests).getId(), wholeNumber(inspectionId, "ID огляду"), wholeNumber(specialistId, "ID фахівця")); refreshRequests(); }));
+        change.setOnAction(e -> safe(() -> {
+            ConservationRequest r = selected(requests);
+            if (state.getValue() == null) throw new IllegalArgumentException("Виберіть новий стан заявки");
+            api.changeRequestState(r.getId(), state.getValue());
+            refreshRequests();
+        }));
         delete.setOnAction(e -> safe(() -> { api.deleteRequest(selected(requests).getId()); refreshRequests(); }));
         refresh.setOnAction(e -> refreshRequests());
         requests.getSelectionModel().selectedItemProperty().addListener((o, a, v) -> {
@@ -101,8 +106,8 @@ public class MainApp extends Application {
         specialists.getColumns().setAll(col("ID", "id"), col("ПІБ", "fullName"), col("Спеціалізація", "specialization"));
         TextField fullName = new TextField(), specialization = new TextField();
         Button add = new Button("Додати"), update = new Button("Змінити"), delete = new Button("Видалити"), refresh = new Button("Оновити");
-        add.setOnAction(e -> safe(() -> { api.addSpecialist(new Specialist(null, fullName.getText(), specialization.getText())); refreshSpecialists(); }));
-        update.setOnAction(e -> safe(() -> { Specialist s = selected(specialists); api.updateSpecialist(new Specialist(s.getId(), fullName.getText(), specialization.getText())); refreshSpecialists(); }));
+        add.setOnAction(e -> safe(() -> { api.addSpecialist(new Specialist(null, text(fullName, "ПІБ"), text(specialization, "Спеціалізація"))); refreshSpecialists(); }));
+        update.setOnAction(e -> safe(() -> { Specialist s = selected(specialists); api.updateSpecialist(new Specialist(s.getId(), text(fullName, "ПІБ"), text(specialization, "Спеціалізація"))); refreshSpecialists(); }));
         delete.setOnAction(e -> safe(() -> { api.deleteSpecialist(selected(specialists).getId()); refreshAll(); }));
         refresh.setOnAction(e -> refreshSpecialists());
         specialists.getSelectionModel().selectedItemProperty().addListener((o, a, s) -> {
@@ -112,10 +117,36 @@ public class MainApp extends Application {
     }
 
     private Exhibit readExhibit(Long id, TextField inv, TextField name, TextField material, TextField f1, TextField f3) {
-        return new Exhibit(id, inv.getText(), name.getText(), material.getText(), Double.parseDouble(f1.getText()), Double.parseDouble(f3.getText()));
+        return new Exhibit(id, text(inv, "Інвентарний номер"), text(name, "Назва"), text(material, "Матеріал"),
+            number(f1, "Чутливість матеріалу"), number(f3, "Значущість експонування"));
     }
     private Inspection readInspection(Long id, TextField exhibitId, TextField date, TextField f2) {
-        return new Inspection(id, Long.parseLong(exhibitId.getText()), date.getText(), Double.parseDouble(f2.getText()));
+        return new Inspection(id, wholeNumber(exhibitId, "ID експоната"), text(date, "Дата огляду"),
+            number(f2, "Тяжкість пошкодження"));
+    }
+
+    // Клієнтська валідація: лише швидка перевірка заповненості й формату чисел.
+    // Предметні правила (діапазон 0–100, існування записів, переходи станів) перевіряє Service на сервері.
+    private static String text(TextField field, String label) {
+        String value = field.getText() == null ? "" : field.getText().trim();
+        if (value.isEmpty()) throw new IllegalArgumentException("Заповніть поле «" + label + "»");
+        return value;
+    }
+    private static double number(TextField field, String label) {
+        String value = text(field, label).replace(',', '.');
+        try {
+            return Double.parseDouble(value);
+        } catch (NumberFormatException e) {
+            throw new IllegalArgumentException("Поле «" + label + "» має бути числом");
+        }
+    }
+    private static long wholeNumber(TextField field, String label) {
+        String value = text(field, label);
+        try {
+            return Long.parseLong(value);
+        } catch (NumberFormatException e) {
+            throw new IllegalArgumentException("Поле «" + label + "» має бути цілим числом");
+        }
     }
 
     private void refreshAll() { refreshExhibits(); refreshInspections(); refreshRequests(); refreshSpecialists(); }

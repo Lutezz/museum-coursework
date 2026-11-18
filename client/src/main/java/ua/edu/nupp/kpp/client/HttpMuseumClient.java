@@ -1,5 +1,6 @@
 package ua.edu.nupp.kpp.client;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.net.URI;
 import java.net.URLEncoder;
@@ -57,17 +58,32 @@ public class HttpMuseumClient {
         return send(req);
     }
     private String send(HttpRequest req) {
+        HttpResponse<String> r;
         try {
-            HttpResponse<String> r = http.send(req, HttpResponse.BodyHandlers.ofString(StandardCharsets.UTF_8));
-            if (r.statusCode() >= 400) throw new RuntimeException(r.body());
-            return r.body();
+            r = http.send(req, HttpResponse.BodyHandlers.ofString(StandardCharsets.UTF_8));
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new RuntimeException("Запит до сервера перервано", e);
         } catch (Exception e) {
-            throw new RuntimeException("Помилка HTTP: " + e.getMessage(), e);
+            throw new RuntimeException("Сервер недоступний. Перевірте, що Tomcat запущено: " + BASE, e);
         }
+        if (r.statusCode() >= 400) throw new RuntimeException(errorText(r));
+        return r.body();
+    }
+
+    // Сервер повертає помилку як JSON {"error": "..."}; користувачу показуємо лише сам текст.
+    private String errorText(HttpResponse<String> r) {
+        try {
+            JsonNode error = mapper.readTree(r.body()).get("error");
+            if (error != null && !error.asText().isBlank()) return error.asText();
+        } catch (Exception ignored) {
+            // відповідь не є JSON — нижче повертаємо загальне повідомлення з кодом
+        }
+        return "Помилка сервера (HTTP " + r.statusCode() + ")";
     }
     private <T> T read(String json, Class<T> type) {
         try { return mapper.readValue(json, type); }
-        catch (Exception e) { throw new RuntimeException("Помилка JSON", e); }
+        catch (Exception e) { throw new RuntimeException("Сервер повернув некоректні дані (помилка JSON)", e); }
     }
     private String enc(String s) { return URLEncoder.encode(s == null ? "" : s, StandardCharsets.UTF_8); }
 }
