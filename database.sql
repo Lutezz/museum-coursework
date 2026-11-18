@@ -4,7 +4,7 @@ USE museum_exhibits;
 
 CREATE TABLE exhibit (
     id BIGINT PRIMARY KEY AUTO_INCREMENT,
-    inventory_number VARCHAR(40) NOT NULL,
+    inventory_number VARCHAR(40) NOT NULL UNIQUE,
     name VARCHAR(160) NOT NULL,
     material VARCHAR(80) NOT NULL,
     material_sensitivity DOUBLE NOT NULL,
@@ -49,3 +49,9 @@ INSERT INTO inspection(exhibit_id, inspection_date, damage_severity) VALUES
 INSERT INTO specialist(full_name, specialization) VALUES
 ('Коваленко Ірина Петрівна', 'реставратор кераміки'),
 ('Мельник Андрій Олегович', 'реставратор текстилю');
+
+-- F1 = exhibit.material_sensitivity, F2 = inspection.damage_severity, F3 = exhibit.exposure_significance
+-- I = 0,40*F1 + 0,35*F2 + 0,25*F3
+INSERT INTO conservation_request(inspection_id, specialist_id, state, f1, f2, f3, integral_index) VALUES
+(1, 1, 'NEW', 40.0, 55.0, 70.0, 52.75),
+(2, 2, 'NEW', 85.0, 30.0, 60.0, 59.5);

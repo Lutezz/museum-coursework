@@ -4,3 +4,5 @@ target/
 *.war
 *.log
 out/
+.env
+application-local.properties
