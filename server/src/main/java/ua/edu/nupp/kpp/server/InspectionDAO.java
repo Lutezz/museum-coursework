@@ -51,8 +51,9 @@ public class InspectionDAO {
     }
 
     private void bind(PreparedStatement p, Inspection x) throws SQLException {
-        
-p.setLong(1,x.getExhibitId());        p.setString(2,x.getInspectionDate());        p.setDouble(3,x.getDamageSeverity());
+        p.setLong(1, x.getExhibitId());
+        p.setString(2, x.getInspectionDate());
+        p.setDouble(3, x.getDamageSeverity());
     }
 
     private Inspection map(ResultSet r) throws SQLException {

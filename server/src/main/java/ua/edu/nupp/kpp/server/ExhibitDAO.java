@@ -33,6 +33,16 @@ public class ExhibitDAO {
         }
     }
 
+    public Exhibit getByInventoryNumber(String inventoryNumber) throws SQLException {
+        try (Connection c = DBUtil.getConnection();
+             PreparedStatement p = c.prepareStatement("SELECT * FROM exhibit WHERE inventory_number=?")) {
+            p.setString(1, inventoryNumber);
+            try (ResultSet r = p.executeQuery()) {
+                return r.next() ? map(r) : null;
+            }
+        }
+    }
+
     public void update(Exhibit x) throws SQLException {
         String sql = "UPDATE exhibit SET inventory_number=?,name=?,material=?,material_sensitivity=?,exposure_significance=? WHERE id=?";
         try (Connection c = DBUtil.getConnection(); PreparedStatement p = c.prepareStatement(sql)) {
@@ -51,8 +61,11 @@ public class ExhibitDAO {
     }
 
     private void bind(PreparedStatement p, Exhibit x) throws SQLException {
-        
-p.setString(1,x.getInventoryNumber());        p.setString(2,x.getName());        p.setString(3,x.getMaterial());        p.setDouble(4,x.getMaterialSensitivity());        p.setDouble(5,x.getExposureSignificance());
+        p.setString(1, x.getInventoryNumber());
+        p.setString(2, x.getName());
+        p.setString(3, x.getMaterial());
+        p.setDouble(4, x.getMaterialSensitivity());
+        p.setDouble(5, x.getExposureSignificance());
     }
 
     private Exhibit map(ResultSet r) throws SQLException {

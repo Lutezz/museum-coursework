@@ -60,8 +60,13 @@ public class ConservationRequestDAO {
     }
 
     private void bind(PreparedStatement p, ConservationRequest x) throws SQLException {
-        
-p.setLong(1,x.getInspectionId());        p.setLong(2,x.getSpecialistId());        p.setString(3,x.getState().name());        p.setDouble(4,x.getF1());        p.setDouble(5,x.getF2());        p.setDouble(6,x.getF3());        p.setDouble(7,x.getIntegralIndex());
+        p.setLong(1, x.getInspectionId());
+        p.setLong(2, x.getSpecialistId());
+        p.setString(3, x.getState().name());
+        p.setDouble(4, x.getF1());
+        p.setDouble(5, x.getF2());
+        p.setDouble(6, x.getF3());
+        p.setDouble(7, x.getIntegralIndex());
     }
 
     private ConservationRequest map(ResultSet r) throws SQLException {

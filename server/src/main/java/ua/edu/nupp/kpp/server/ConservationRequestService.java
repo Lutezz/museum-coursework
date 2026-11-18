@@ -14,28 +14,33 @@ public class ConservationRequestService {
     public List<ConservationRequest> getAll() throws SQLException { return dao.getAll(); }
 
     public void add(long inspectionId, long specialistId) throws SQLException {
-        dao.add(build(null, inspectionId, specialistId, RequestState.NEW));
-        LOG.info("Створено заявку на консервацію");
+        ConservationRequest request = build(null, inspectionId, specialistId, RequestState.NEW);
+        dao.add(request);
+        LOG.info("Створено заявку на консервацію за оглядом №" + inspectionId
+                + ", I = " + request.getIntegralIndex());
     }
 
     public void update(long id, long inspectionId, long specialistId) throws SQLException {
-        ConservationRequest old = dao.getById(id);
-        if (old == null) throw new IllegalArgumentException("Заявку не знайдено");
-        dao.update(build(id, inspectionId, specialistId, old.getState()));
-        LOG.info("Оновлено заявку на консервацію");
+        ConservationRequest old = requireExists(id);
+        ConservationRequest request = build(id, inspectionId, specialistId, old.getState());
+        dao.update(request);
+        LOG.info("Оновлено заявку на консервацію №" + id + ", I = " + request.getIntegralIndex());
     }
 
     public void changeState(long id, RequestState next) throws SQLException {
-        ConservationRequest current = dao.getById(id);
-        if (current == null) throw new IllegalArgumentException("Заявку не знайдено");
+        ConservationRequest current = requireExists(id);
         if (!isAllowedTransition(current.getState(), next)) {
-            throw new IllegalArgumentException("Недопустимий перехід стану");
+            throw reject("Недопустимий перехід стану заявки №" + id + ": " + current.getState() + " → " + next);
         }
         dao.updateState(id, next);
-        LOG.info("Змінено стан заявки на консервацію");
+        LOG.info("Заявку на консервацію №" + id + " переведено " + current.getState() + " → " + next);
     }
 
-    public void delete(long id) throws SQLException { dao.delete(id); LOG.info("Видалено заявку на консервацію"); }
+    public void delete(long id) throws SQLException {
+        requireExists(id);
+        dao.delete(id);
+        LOG.info("Видалено заявку на консервацію №" + id);
+    }
 
     public static boolean isAllowedTransition(RequestState from, RequestState to) {
         return (from == RequestState.NEW && to == RequestState.ASSESSED)
@@ -43,16 +48,29 @@ public class ConservationRequestService {
             || (from == RequestState.WORKS && to == RequestState.COMPLETED);
     }
 
+    private ConservationRequest requireExists(long id) throws SQLException {
+        ConservationRequest request = dao.getById(id);
+        if (request == null) throw reject("Заявку на консервацію №" + id + " не знайдено");
+        return request;
+    }
+
+    // F1 і F3 беруться з експоната, F2 — з огляду; I розраховується сервером, а не вводиться вручну.
     private ConservationRequest build(Long id, long inspectionId, long specialistId, RequestState state) throws SQLException {
         Inspection inspection = inspectionDAO.getById(inspectionId);
-        if (inspection == null) throw new IllegalArgumentException("Огляд не знайдено");
-        if (specialistDAO.getById(specialistId) == null) throw new IllegalArgumentException("Фахівця не знайдено");
+        if (inspection == null) throw reject("Огляд №" + inspectionId + " не знайдено");
+        if (specialistDAO.getById(specialistId) == null) throw reject("Фахівця №" + specialistId + " не знайдено");
         Exhibit exhibit = exhibitDAO.getById(inspection.getExhibitId());
-        if (exhibit == null) throw new IllegalArgumentException("Експонат не знайдено");
+        if (exhibit == null) throw reject("Експонат №" + inspection.getExhibitId() + " не знайдено");
         double f1 = exhibit.getMaterialSensitivity();
         double f2 = inspection.getDamageSeverity();
         double f3 = exhibit.getExposureSignificance();
         return new ConservationRequest(id, inspectionId, specialistId, state, f1, f2, f3,
                 IndexCalculator.calculate(f1, f2, f3));
+    }
+
+    // Відхилена предметна операція: фіксуємо попередження і повертаємо виняток для викликача.
+    private static IllegalArgumentException reject(String message) {
+        LOG.warning(message);
+        return new IllegalArgumentException(message);
     }
 }

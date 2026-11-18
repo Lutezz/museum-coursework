@@ -51,8 +51,8 @@ public class SpecialistDAO {
     }
 
     private void bind(PreparedStatement p, Specialist x) throws SQLException {
-        
-p.setString(1,x.getFullName());        p.setString(2,x.getSpecialization());
+        p.setString(1, x.getFullName());
+        p.setString(2, x.getSpecialization());
     }
 
     private Specialist map(ResultSet r) throws SQLException {

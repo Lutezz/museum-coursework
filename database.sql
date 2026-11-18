@@ -14,7 +14,7 @@ CREATE TABLE exhibit (
 CREATE TABLE inspection (
     id BIGINT PRIMARY KEY AUTO_INCREMENT,
     exhibit_id BIGINT NOT NULL,
-    inspection_date VARCHAR(10),
+    inspection_date DATE NOT NULL,
     damage_severity DOUBLE NOT NULL,
     FOREIGN KEY (exhibit_id) REFERENCES exhibit(id)
 );
