@@ -1,13 +1,11 @@
 package ua.edu.nupp.kpp.server;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import javax.servlet.http.*;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
-import java.util.Map;
 
-public class SpecialistServlet extends HttpServlet {
+public class SpecialistServlet extends JsonServlet {
     private final SpecialistService service = new SpecialistService();
-    private final ObjectMapper mapper = new ObjectMapper();
 
     @Override
     protected void doGet(HttpServletRequest req,
@@ -45,33 +43,5 @@ public class SpecialistServlet extends HttpServlet {
         } catch (Exception e) {
             writeError(resp, e);
         }
-    }
-
-    private void writeJson(HttpServletResponse resp,
-                           Object data) throws IOException {
-        resp.setContentType("application/json");
-        resp.setCharacterEncoding("UTF-8");
-        mapper.writeValue(resp.getWriter(), data);
-    }
-
-    private void writeError(HttpServletResponse resp,
-                            Exception e) throws IOException {
-        boolean clientError = e instanceof IllegalArgumentException;
-        if (!clientError) {
-            java.util.logging.Logger.getLogger(getClass().getName())
-                    .log(java.util.logging.Level.SEVERE, "Помилка обробки запиту", e);
-        }
-        int status = clientError
-            ? HttpServletResponse.SC_BAD_REQUEST
-            : HttpServletResponse.SC_INTERNAL_SERVER_ERROR;
-        String message = clientError
-            ? (e.getMessage() == null ? "Некоректний запит" : e.getMessage())
-            : "Внутрішня помилка сервера";
-        resp.setStatus(status);
-        writeJson(resp, Map.of("error", message));
-    }
-
-    private long id(HttpServletRequest req) {
-        return Long.parseLong(req.getParameter("id"));
     }
 }

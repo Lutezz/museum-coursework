@@ -1,13 +1,11 @@
 package ua.edu.nupp.kpp.server;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import javax.servlet.http.*;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
-import java.util.Map;
 
-public class ConservationRequestServlet extends HttpServlet {
+public class ConservationRequestServlet extends JsonServlet {
     private final ConservationRequestService service = new ConservationRequestService();
-    private final ObjectMapper mapper = new ObjectMapper();
 
     @Override
     protected void doGet(HttpServletRequest req,
@@ -27,21 +25,18 @@ public class ConservationRequestServlet extends HttpServlet {
             String action = req.getParameter("action");
             if ("add".equals(action)) {
                 service.add(
-                    Long.parseLong(req.getParameter("inspectionId")),
-                    Long.parseLong(req.getParameter("specialistId"))
+                    longParam(req, "inspectionId"),
+                    longParam(req, "specialistId")
                 );
             } else if ("update".equals(action)) {
                 service.update(
                     id(req),
-                    Long.parseLong(req.getParameter("inspectionId")),
-                    Long.parseLong(req.getParameter("specialistId"))
+                    longParam(req, "inspectionId"),
+                    longParam(req, "specialistId")
                 );
             } else if ("transition".equals(action)) {
-                String stateValue = req.getParameter("state");
-                if (stateValue == null || stateValue.isBlank()) {
-                    throw new IllegalArgumentException("Не задано стан заявки");
-                }
-                service.changeState(id(req), RequestState.valueOf(stateValue));
+                // Servlet лише перетворює текст у enum; допустимість переходу перевіряє Service.
+                service.changeState(id(req), state(req));
             } else if ("delete".equals(action)) {
                 service.delete(id(req));
             } else {
@@ -53,31 +48,12 @@ public class ConservationRequestServlet extends HttpServlet {
         }
     }
 
-    private void writeJson(HttpServletResponse resp,
-                           Object data) throws IOException {
-        resp.setContentType("application/json");
-        resp.setCharacterEncoding("UTF-8");
-        mapper.writeValue(resp.getWriter(), data);
-    }
-
-    private void writeError(HttpServletResponse resp,
-                            Exception e) throws IOException {
-        boolean clientError = e instanceof IllegalArgumentException;
-        if (!clientError) {
-            java.util.logging.Logger.getLogger(getClass().getName())
-                    .log(java.util.logging.Level.SEVERE, "Помилка обробки запиту", e);
+    private RequestState state(HttpServletRequest req) {
+        String value = required(req, "state");
+        try {
+            return RequestState.valueOf(value);
+        } catch (IllegalArgumentException e) {
+            throw new IllegalArgumentException("Невідомий стан заявки: " + value);
         }
-        int status = clientError
-            ? HttpServletResponse.SC_BAD_REQUEST
-            : HttpServletResponse.SC_INTERNAL_SERVER_ERROR;
-        String message = clientError
-            ? (e.getMessage() == null ? "Некоректний запит" : e.getMessage())
-            : "Внутрішня помилка сервера";
-        resp.setStatus(status);
-        writeJson(resp, Map.of("error", message));
-    }
-
-    private long id(HttpServletRequest req) {
-        return Long.parseLong(req.getParameter("id"));
     }
 }
