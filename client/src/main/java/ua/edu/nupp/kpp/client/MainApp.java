@@ -6,7 +6,9 @@ import javafx.geometry.Insets;
 import javafx.scene.Scene;
 import javafx.scene.control.*;
 import javafx.scene.layout.*;
+import javafx.stage.FileChooser;
 import javafx.stage.Stage;
+import java.io.File;
 import java.nio.file.Path;
 import java.util.logging.Logger;
 
@@ -49,18 +51,51 @@ public class MainApp extends Application {
                 f1.setText("" + x.getMaterialSensitivity()); f3.setText("" + x.getExposureSignificance()); }
         });
         importCsv.setOnAction(e -> {
-            ImportExhibitsTask task = new ImportExhibitsTask(Path.of("sample-data", "exhibits.csv"), api);
-            progress.progressProperty().bind(task.progressProperty());
-            status.textProperty().bind(task.messageProperty());
-            task.setOnSucceeded(x -> { progress.progressProperty().unbind(); status.textProperty().unbind();
-                status.setText("Готово. Імпортовано: " + task.getValue()); refreshExhibits(); });
-            task.setOnFailed(x -> { progress.progressProperty().unbind(); status.textProperty().unbind(); showError(task.getException()); });
-            new Thread(task, "csv-import").start();
+            Path csv = chooseCsv(importCsv);
+            if (csv != null) startImport(csv, importCsv, progress, status);
         });
         VBox form = new VBox(6, new Label("Інвентарний номер"), inv, new Label("Назва"), name, new Label("Матеріал"), material,
             new Label("Чутливість матеріалу (F1, 0–100)"), f1, new Label("Значущість експонування (F3, 0–100)"), f3,
             new HBox(8, add, update, delete, refresh), importCsv, progress, status);
         return layout(exhibits, form);
+    }
+
+    // Шлях до CSV обирає користувач; діалог відкривається у відносному каталозі sample-data.
+    private Path chooseCsv(Button owner) {
+        FileChooser chooser = new FileChooser();
+        chooser.setTitle("Виберіть CSV-файл каталогу експонатів");
+        chooser.getExtensionFilters().add(new FileChooser.ExtensionFilter("CSV-файли (*.csv)", "*.csv"));
+        File sampleData = Path.of("sample-data").toFile();
+        if (sampleData.isDirectory()) chooser.setInitialDirectory(sampleData.getAbsoluteFile());
+        File selected = chooser.showOpenDialog(owner.getScene().getWindow());
+        return selected == null ? null : selected.toPath();
+    }
+
+    private void startImport(Path csv, Button importCsv, ProgressBar progress, Label status) {
+        ImportExhibitsTask task = new ImportExhibitsTask(csv, api);
+        progress.progressProperty().bind(task.progressProperty());
+        status.textProperty().bind(task.messageProperty());
+        importCsv.setDisable(true); // повторний запуск заблоковано, поки триває імпорт
+        task.setOnSucceeded(x -> {
+            progress.progressProperty().unbind();
+            status.textProperty().unbind();
+            status.setText(task.getMessage());
+            importCsv.setDisable(false);
+            refreshExhibits();
+        });
+        task.setOnFailed(x -> {
+            progress.progressProperty().unbind();
+            status.textProperty().unbind();
+            progress.setProgress(0);
+            Throwable error = task.getException();
+            status.setText("Імпорт не виконано: " + (error == null ? "невідома помилка" : error.getMessage()));
+            importCsv.setDisable(false);
+            refreshExhibits(); // частина рядків могла бути збережена до помилки
+            showError(error);
+        });
+        Thread thread = new Thread(task, "csv-import");
+        thread.setDaemon(true);
+        thread.start();
     }
 
     private Pane inspectionPane() {

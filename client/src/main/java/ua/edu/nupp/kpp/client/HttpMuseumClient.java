@@ -63,11 +63,11 @@ public class HttpMuseumClient {
             r = http.send(req, HttpResponse.BodyHandlers.ofString(StandardCharsets.UTF_8));
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
-            throw new RuntimeException("Запит до сервера перервано", e);
+            throw new ApiException(0, "Запит до сервера перервано", e);
         } catch (Exception e) {
-            throw new RuntimeException("Сервер недоступний. Перевірте, що Tomcat запущено: " + BASE, e);
+            throw new ApiException(0, "Сервер недоступний. Перевірте, що Tomcat запущено: " + BASE, e);
         }
-        if (r.statusCode() >= 400) throw new RuntimeException(errorText(r));
+        if (r.statusCode() >= 400) throw new ApiException(r.statusCode(), errorText(r), null);
         return r.body();
     }
 
