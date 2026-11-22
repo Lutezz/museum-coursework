@@ -203,6 +203,8 @@ public class MainApp extends Application {
         d.showAndWait();
     }
     private Pane layout(TableView<?> table, Pane form) {
+        // колонки розтягуються на всю ширину таблиці, щоб текст не обрізався
+        table.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY_ALL_COLUMNS);
         SplitPane p = new SplitPane(table, form);
         p.setDividerPositions(0.68);
         BorderPane root = new BorderPane(p);
