@@ -199,7 +199,9 @@ public class MainApp extends Application {
         try { action.run(); } catch (Exception e) { LOG.warning(e.getMessage()); showError(e); }
     }
     private void showError(Throwable e) {
-        Alert d = new Alert(Alert.AlertType.ERROR, e == null ? "Помилка" : e.getMessage(), ButtonType.OK);
+        Alert d = new Alert(Alert.AlertType.ERROR, e == null ? "Невідома помилка" : e.getMessage(), ButtonType.OK);
+        d.setTitle("Помилка");
+        d.setHeaderText("Операцію не виконано");
         d.showAndWait();
     }
     private Pane layout(TableView<?> table, Pane form) {
