@@ -29,7 +29,7 @@
 | JavaFX (javafx-controls) | 21.0.2 |
 | Servlet API (`javax.servlet`) | 4.0.1 |
 | Apache Tomcat | 9.x |
-| MySQL / MySQL Connector/J | XAMPP / 9.7.0 |
+| MySQL Server / MySQL Connector/J | 8.0+ / 9.7.0 |
 | Jackson Databind | 2.18.2 |
 | JUnit Jupiter | 5.11.4 |
 
@@ -57,8 +57,13 @@ museum_Slastonov/
 
 ## 1. Підготовка MySQL
 
-1. У XAMPP Control Panel запустіть модулі **Apache** і **MySQL**.
-2. Відкрийте http://localhost/phpmyadmin → вкладка **Імпорт** → виберіть `database.sql` → **Вперед**.
+1. Переконайтеся, що сервер MySQL запущено (окремий MySQL Server працює як служба Windows;
+   у складі XAMPP — запускається кнопкою **Start** у XAMPP Control Panel).
+2. Виконайте `database.sql` з кореня репозиторію консольним клієнтом MySQL:
+   ```
+   mysql -u root -p --default-character-set=utf8mb4 < database.sql
+   ```
+   або через phpMyAdmin (вкладка **Імпорт**) чи MySQL Workbench.
 3. Буде створено базу `museum_exhibits` з таблицями `exhibit`, `inspection`, `specialist`,
    `conservation_request` і демонстраційними даними (2 експонати, 2 огляди, 2 фахівці, 2 заявки).
    Повторне виконання скрипту відновлює базу з нуля.

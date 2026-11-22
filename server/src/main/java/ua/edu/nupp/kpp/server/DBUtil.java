@@ -6,7 +6,7 @@ import java.sql.SQLException;
 
 public final class DBUtil {
     // Параметри підключення беруться зі змінних середовища, щоб пароль не потрапляв у код і GitHub.
-    // Якщо змінну не задано, використовується значення за замовчуванням для локального XAMPP.
+    // Якщо змінну не задано, використовується значення за замовчуванням для локального сервера MySQL.
     private static final String URL = env("MUSEUM_DB_URL", "jdbc:mysql://localhost:3306/museum_exhibits");
     private static final String USER = env("MUSEUM_DB_USER", "root");
     private static final String PASSWORD = env("MUSEUM_DB_PASSWORD", "");
