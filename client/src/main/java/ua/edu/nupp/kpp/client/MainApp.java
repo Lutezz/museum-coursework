@@ -109,7 +109,7 @@ public class MainApp extends Application {
         inspections.getSelectionModel().selectedItemProperty().addListener((o, a, i) -> {
             if (i != null) { exhibitId.setText("" + i.getExhibitId()); date.setText(i.getInspectionDate()); f2.setText("" + i.getDamageSeverity()); }
         });
-        return layout(inspections, new VBox(8, new Label("ID експоната"), exhibitId, new Label("Дата огляду YYYY-MM-DD"), date,
+        return layout(inspections, new VBox(8, new Label("ID експоната"), exhibitId, new Label("Дата огляду (РРРР-ММ-ДД)"), date,
             new Label("Тяжкість пошкодження (F2, 0–100)"), f2, new HBox(8, add, update, delete, refresh)));
     }
 
