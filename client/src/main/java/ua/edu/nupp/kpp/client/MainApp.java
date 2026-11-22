@@ -134,7 +134,7 @@ public class MainApp extends Application {
             if (v != null) { inspectionId.setText("" + v.getInspectionId()); specialistId.setText("" + v.getSpecialistId()); }
         });
         return layout(requests, new VBox(8, new Label("ID огляду"), inspectionId, new Label("ID фахівця"), specialistId,
-            new Label("Новий стан"), state, new HBox(8, add, update, change, delete, refresh)));
+            new Label("Новий стан"), new HBox(8, state, change), new HBox(8, add, update, delete, refresh)));
     }
 
     private Pane specialistPane() {
